@@ -118,10 +118,17 @@ test('JSON export includes election records and keeps voter IDs out of blockchai
 test('Vercel/mobile deployment settings are present', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
   const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
   assert.match(html, /export-button/);
+  assert.match(html, /voter-login-form/);
+  assert.match(html, /organizer-login-form/);
+  assert.match(source, /title: 'Classroom Election'/);
+  assert.match(source, /password !== 'classroom'/);
+  assert.match(readme, /Use \*\*New election\*\*/);
   assert.match(source, /blockvote-election-data\.json/);
   assert.match(css, /@media\(max-width:720px\)/);
+  assert.match(css, /\.login-screen/);
   assert.equal(config.version, 2);
 });
 
