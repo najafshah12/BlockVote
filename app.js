@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const STORAGE_KEY = 'blockvote.educational.v1';
-  const DEMO_IDS = Array.from({ length: 10 }, (_, i) => `VOTER${String(i + 1).padStart(3, '0')}`);
+  const DEFAULT_VOTER_IDS = Array.from({ length: 10 }, (_, i) => `VOTER${String(i + 1).padStart(3, '0')}`);
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const copy = value => JSON.parse(JSON.stringify(value));
@@ -11,13 +11,13 @@
 
   function starterData() {
     return {
-      election: { title: 'Classroom Election', description: 'A demo election. Change the title and candidates in Election admin.', status: 'not-started', createdAt: now() },
+      election: { title: 'Classroom Election', description: 'Change the title and candidates in Election admin.', status: 'not-started', createdAt: now() },
       candidates: [
-        { id: 'candidate-a', name: 'Candidate 1', description: 'Demo candidate' },
-        { id: 'candidate-b', name: 'Candidate 2', description: 'Demo candidate' },
-        { id: 'candidate-c', name: 'Candidate 3', description: 'Demo candidate' }
+        { id: 'candidate-a', name: 'Candidate 1', description: 'Candidate' },
+        { id: 'candidate-b', name: 'Candidate 2', description: 'Candidate' },
+        { id: 'candidate-c', name: 'Candidate 3', description: 'Candidate' }
       ],
-      eligibility: Object.fromEntries(DEMO_IDS.map(id => [id, { voted: false }])),
+      eligibility: Object.fromEntries(DEFAULT_VOTER_IDS.map(id => [id, { voted: false }])),
       chain: [],
       results: null
     };
@@ -37,22 +37,22 @@
       if (!parsed?.election || !Array.isArray(parsed.candidates) || !parsed.eligibility || !Array.isArray(parsed.chain)) throw new Error('Unexpected saved data shape');
       if (parsed.election.title === 'School Student Council Election 2026') {
         parsed.election.title = 'Classroom Election';
-        parsed.election.description = 'A demo election. Change the title and candidates in Election admin.';
+        parsed.election.description = 'Change the title and candidates in Election admin.';
         parsed.candidates.forEach((candidate, index) => {
           if (/^Candidate [ABC]$/.test(candidate.name)) {
             candidate.name = `Candidate ${index + 1}`;
-            candidate.description = 'Demo candidate';
+            candidate.description = 'Candidate';
           }
         });
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
       }
-      // Fill absent eligible demo IDs without changing any existing records.
-      for (const id of DEMO_IDS) parsed.eligibility[id] ||= { voted: false };
+      // Fill absent registered IDs without changing any existing records.
+      for (const id of DEFAULT_VOTER_IDS) parsed.eligibility[id] ||= { voted: false };
       parsed.results ||= null;
       return parsed;
     } catch (error) {
-      console.warn('BlockVote could not read saved data; starting a fresh demo.', error);
-      setTimeout(() => toast('Saved demo data could not be read. A fresh demo election is ready.', true), 300);
+      console.warn('BlockVote could not read saved data; starting a fresh election.', error);
+      setTimeout(() => toast('Saved election data could not be read. A fresh election is ready.', true), 300);
       return starterData();
     }
   }
@@ -143,7 +143,7 @@
   async function recordVote(voterId, candidateId) {
     if (state.election.status !== 'open') throw new Error('Election is not open.');
     const eligibility = checkVoterEligibility(voterId);
-    if (!eligibility.eligible) throw new Error(eligibility.reason === 'invalid-id' ? 'Invalid demo voter ID.' : 'This demo ID has already voted.');
+    if (!eligibility.eligible) throw new Error(eligibility.reason === 'invalid-id' ? 'Invalid voter ID.' : 'This voter ID has already voted.');
     if (!state.candidates.some(candidate => candidate.id === candidateId)) throw new Error('Invalid candidate selection.');
     await verifyChainOrThrow();
     const transaction = { transactionId: newId(), candidateId, recordedAt: now() };
@@ -164,10 +164,6 @@
       state.election.status = 'ended'; state.election.endedAt = now();
     } else throw new Error('Unsupported election status.');
     persist(); return state.election.status;
-  }
-
-  function createExportPayload() {
-    return { exportedAt: now(), educationalNotice: 'Local browser simulation; not decentralized or suitable for a public election.', election: copy(state.election), candidates: copy(state.candidates), eligibility: copy(state.eligibility), blockchain: copy(state.chain) };
   }
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
@@ -260,7 +256,7 @@
     if (voterLogin) {
       feedback.classList.remove('hidden', 'success', 'error');
       feedback.classList.add(loggedInVoterUsed ? 'error' : 'success');
-      feedback.textContent = loggedInVoterUsed ? 'This demo ID has already voted.' : `Signed in as ${currentUser.id}. Choose a candidate below.`;
+      feedback.textContent = loggedInVoterUsed ? 'This voter ID has already voted.' : `Signed in as ${currentUser.id}. Choose a candidate below.`;
     }
     if (open && pendingVoter) {
       $('#vote-candidates').innerHTML = state.candidates.map(candidate => `<div class="candidate-option${selectedCandidate === candidate.id ? ' selected' : ''}" data-candidate="${escapeHtml(candidate.id)}"><span class="candidate-radio"></span><span><b>${escapeHtml(candidate.name)}</b><small>${escapeHtml(candidate.description)}</small></span></div>`).join('');
@@ -330,7 +326,7 @@
       event.preventDefault();
       const id = $('#login-voter-id').value.trim().toUpperCase();
       if (!Object.hasOwn(state.eligibility, id)) {
-        $('#login-error').textContent = 'That demo ID is not registered. Use VOTER001 through VOTER010.';
+        $('#login-error').textContent = 'That voter ID is not registered. Use VOTER001 through VOTER010.';
         $('#login-error').classList.remove('hidden'); return;
       }
       $('#login-error').classList.add('hidden');
@@ -341,7 +337,7 @@
       const name = $('#login-organizer-name').value.trim();
       const password = $('#login-organizer-password').value;
       if (name.toLowerCase() !== 'organizer' || password !== 'classroom') {
-        $('#login-error').textContent = 'Organizer sign-in did not match the demo credentials.';
+        $('#login-error').textContent = 'Organizer name or password is incorrect.';
         $('#login-error').classList.remove('hidden'); return;
       }
       $('#login-error').classList.add('hidden');
@@ -357,8 +353,8 @@
       event.preventDefault(); const id = $('#voter-id').value.trim().toUpperCase(); const feedback = $('#voter-feedback');
       feedback.classList.remove('hidden', 'success', 'error');
       if (currentUser?.role === 'voter') { feedback.classList.add('error'); feedback.textContent = 'Sign out to switch voter IDs.'; return; }
-      if (!Object.hasOwn(state.eligibility, id)) { feedback.classList.add('error'); feedback.textContent = 'That demo ID is not registered. Try VOTER001 through VOTER010.'; pendingVoter = null; }
-      else if (state.eligibility[id].voted) { feedback.classList.add('error'); feedback.textContent = 'This demo ID has already voted. Each registered ID can vote once.'; pendingVoter = null; }
+      if (!Object.hasOwn(state.eligibility, id)) { feedback.classList.add('error'); feedback.textContent = 'That voter ID is not registered. Use VOTER001 through VOTER010.'; pendingVoter = null; }
+      else if (state.eligibility[id].voted) { feedback.classList.add('error'); feedback.textContent = 'This voter ID has already voted. Each registered ID can vote once.'; pendingVoter = null; }
       else { pendingVoter = id; selectedCandidate = null; feedback.classList.add('success'); feedback.textContent = 'ID verified. Choose a candidate below.'; }
       renderVoting();
     });
@@ -377,7 +373,7 @@
     $('#submit-vote').addEventListener('click', async () => {
       const button = $('#submit-vote'); button.disabled = true;
       try {
-        if (!pendingVoter) throw new Error('Verify a registered demo ID first.');
+        if (!pendingVoter) throw new Error('Sign in with a registered voter ID first.');
         await recordVote(pendingVoter, selectedCandidate);
         $('#confirm-dialog').close(); pendingVoter = null; selectedCandidate = null; $('#voter-id').value = ''; $('#voter-feedback').classList.add('hidden');
         toast('Vote recorded. A new block has been added to the chain.'); await update(); location.hash = '#explorer';
@@ -415,15 +411,15 @@
     });
     $('#end-election').addEventListener('click', () => {
       if (state.election.status !== 'open') return;
-      if (!window.confirm('End voting now? No more demo votes will be accepted.')) return;
+      if (!window.confirm('End voting now? No more votes will be accepted.')) return;
       try { setElectionStatus('ended'); update(); toast('Election ended. Results are available.'); } catch (error) { toast(error.message, true); }
     });
     $('#reset-election').addEventListener('click', () => {
-      if (!window.confirm('Reset the demo election and remove its votes from this browser? This cannot be undone.')) return;
-      state = starterData(); pendingVoter = null; selectedCandidate = null; tamperedChain = null; persist(); update(); toast('Demo election reset.'); location.hash = '#dashboard';
+      if (!window.confirm('Reset this election and remove its votes from this browser? This cannot be undone.')) return;
+      state = starterData(); pendingVoter = null; selectedCandidate = null; tamperedChain = null; persist(); update(); toast('Election reset.'); location.hash = '#dashboard';
     });
     $('#create-election').addEventListener('click', async () => {
-      if (!window.confirm('Start a new election? This clears the current demo votes and candidates.')) return;
+      if (!window.confirm('Start a new election? This clears the current votes and candidates.')) return;
       state = starterData();
       state.election.title = 'New Election';
       state.election.description = '';
@@ -433,7 +429,7 @@
     });
 
     $('#tamper-button').addEventListener('click', async () => {
-      if (state.chain.length < 3) return toast('Cast at least two demo votes so the altered block has a later link to break.', true);
+      if (state.chain.length < 3) return toast('Cast at least two votes so the altered block has a later link to break.', true);
       tamperedChain = copy(state.chain);
       const target = tamperedChain.find(block => block.index === 1) || tamperedChain[1];
       target.transactions[0] = { ...target.transactions[0], candidateId: 'tampered-candidate-data' };
@@ -443,12 +439,6 @@
     });
     $('#restore-button').addEventListener('click', async () => { tamperedChain = null; await renderExplorer(); toast('Original election blockchain restored.'); });
 
-    $('#export-button').addEventListener('click', () => {
-      // The export separates eligibility from vote transactions and never puts IDs into blocks.
-      const payload = createExportPayload();
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a');
-      anchor.href = url; anchor.download = 'blockvote-election-data.json'; anchor.click(); URL.revokeObjectURL(url); toast('Blockchain data exported as JSON.');
-    });
   }
 
   async function boot() {
@@ -462,7 +452,7 @@
   window.BlockVote = {
     initialize: async () => { state ||= loadState(); await ensureGenesis(); return copy(state); },
     createGenesisBlock, calculateHash, createBlock, addBlock, validateChain, getLatestBlock,
-    detectTampering, checkVoterEligibility, recordVote, getCounts: countsFrom, setElectionStatus, createExportPayload
+    detectTampering, checkVoterEligibility, recordVote, getCounts: countsFrom, setElectionStatus
   };
   document.addEventListener('DOMContentLoaded', boot);
 })();
