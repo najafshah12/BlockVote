@@ -1,6 +1,6 @@
 # BlockVote — Blockchain-Based Election System
 
-BlockVote is an educational election simulation for Grade 8 and Grade 9 students. It demonstrates SHA-256 hashes, linked blocks, a separate eligibility list, anonymized candidate vote records, and visible tamper detection.
+BlockVote is a browser demo for setting up an election, casting test votes, and checking how linked blocks work.
 
 > This project demonstrates blockchain concepts through a local JavaScript simulation. It is designed for educational purposes and is not suitable for real public elections.
 
@@ -31,15 +31,13 @@ node --test tests/blockchain.test.cjs
 
 You can also install the Vercel CLI and run `vercel` from this folder. The public URL is assigned by Vercel after deployment; this local build has not been deployed to an external account.
 
-## Try the classroom demo
+## Sign in and try it
 
-1. Open **Election admin** and start the election.
-2. Open **Cast a vote** and use one of `VOTER001` through `VOTER010`.
-3. Pick a candidate and confirm the vote.
-4. Explore the new block under **Blockchain explorer** or check tallies under **Election results**.
-5. Select **Simulate data tampering** to edit a temporary chain copy. Restore it to return the explorer to the real chain.
+The organizer demo sign-in is `organizer` / `classroom`. It is a front-end demo gate, not secure authentication.
 
-The initial election is **School Student Council Election 2026**, with Candidate A, Candidate B, and Candidate C. Voter IDs are demonstration credentials only.
+Voter demo IDs are `VOTER001` through `VOTER010`. The default election is called **Classroom Election**. Use **New election** in the organizer controls to start with a blank candidate list, then add the title and candidates you need.
+
+Start voting, sign in with a voter ID, cast a vote, and view the new block or results. The tamper demo changes a temporary copy of the chain.
 
 ## Data and limitations
 
@@ -53,3 +51,4 @@ The demo stores election state in browser LocalStorage. It is not secure, decent
 - `styles.css` — visual design and mobile layouts
 - `app.js` — custom blockchain engine and interactive election logic
 - `vercel.json` — static deployment headers
+
