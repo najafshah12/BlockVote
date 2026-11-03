@@ -109,6 +109,7 @@ test('Vercel/mobile deployment settings are present', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
   const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
+  const favicon = fs.readFileSync(path.join(__dirname, '..', 'favicon.svg'), 'utf8');
   const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
   assert.doesNotMatch(html, /export-button|Export JSON/i);
   assert.doesNotMatch(source, /createExportPayload|blockvote-election-data\.json/);
@@ -117,7 +118,12 @@ test('Vercel/mobile deployment settings are present', () => {
   assert.match(source, /title: 'Classroom Election'/);
   assert.match(source, /password !== 'classroom'/);
   assert.match(readme, /Use \*\*New election\*\*/);
-  assert.match(html, /local-pill/);
+  assert.doesNotMatch(html, /LOCAL/);
+  assert.match(html, /favicon\.svg/);
+  assert.match(favicon, /<svg/);
+  assert.match(html, /family=Poppins/);
+  assert.match(css, /Poppins/);
+  assert.match(css, /'Times New Roman'/);
   assert.match(css, /@media\(max-width:720px\)/);
   assert.match(css, /\.login-screen/);
   assert.equal(config.version, 2);
