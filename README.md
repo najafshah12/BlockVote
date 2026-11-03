@@ -1,8 +1,8 @@
 # BlockVote — Blockchain-Based Election System
 
-BlockVote is a browser demo for setting up an election, casting test votes, and checking how linked blocks work.
+BlockVote is a browser-based election simulator for setting up an election, casting test votes, and checking linked blocks.
 
-> This project demonstrates blockchain concepts through a local JavaScript simulation. It is designed for educational purposes and is not suitable for real public elections.
+> BlockVote uses a local JavaScript simulation to explain blockchain. It is for education and is not suitable for real public elections.
 
 ## Run locally
 
@@ -33,15 +33,15 @@ You can also install the Vercel CLI and run `vercel` from this folder. The publi
 
 ## Sign in and try it
 
-The organizer demo sign-in is `organizer` / `classroom`. It is a front-end demo gate, not secure authentication.
+The organizer sign-in for this local build is `organizer` / `classroom`. This front-end sign-in only separates screens; it is not secure authentication.
 
-Voter demo IDs are `VOTER001` through `VOTER010`. The default election is called **Classroom Election**. Use **New election** in the organizer controls to start with a blank candidate list, then add the title and candidates you need.
+Registered voter IDs are `VOTER001` through `VOTER010`. The default election is called **Classroom Election**. Use **New election** in the organizer controls to start with a blank candidate list, then add the title and candidates you need.
 
-Start voting, sign in with a voter ID, cast a vote, and view the new block or results. The tamper demo changes a temporary copy of the chain.
+Start voting, sign in with a voter ID, cast a vote, and view the new block or results. The tamper test changes a temporary copy of the chain.
 
 ## Data and limitations
 
-The demo stores election state in browser LocalStorage. It is not secure, decentralized, or immutable storage. The eligibility record stores whether an ID has voted; blockchain transactions contain a candidate ID and random transaction ID, but no voter ID. Results are computed from those transactions. A browser user can inspect or alter local data, and SHA-256 by itself does not provide voter authentication, election security, distributed consensus, or independent verification.
+The app stores election state in browser LocalStorage. It is not secure, decentralized, or immutable storage. The eligibility record stores whether an ID has voted; blockchain transactions contain a candidate ID and random transaction ID, but no voter ID. Results are computed from those transactions. A browser user can inspect or alter local data, and SHA-256 by itself does not provide voter authentication, election security, distributed consensus, or independent verification.
 
 **Do not use BlockVote for a real election.**
 
