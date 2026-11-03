@@ -11,11 +11,11 @@
 
   function starterData() {
     return {
-      election: { title: 'School Student Council Election 2026', description: 'A transparent, hands-on way to explore how blockchain records work.', status: 'not-started', createdAt: now() },
+      election: { title: 'Classroom Election', description: 'A demo election. Change the title and candidates in Election admin.', status: 'not-started', createdAt: now() },
       candidates: [
-        { id: 'candidate-a', name: 'Candidate A', description: 'Ready to listen and lead.' },
-        { id: 'candidate-b', name: 'Candidate B', description: 'Ideas for a stronger school community.' },
-        { id: 'candidate-c', name: 'Candidate C', description: 'Making every student voice count.' }
+        { id: 'candidate-a', name: 'Candidate 1', description: 'Demo candidate' },
+        { id: 'candidate-b', name: 'Candidate 2', description: 'Demo candidate' },
+        { id: 'candidate-c', name: 'Candidate 3', description: 'Demo candidate' }
       ],
       eligibility: Object.fromEntries(DEMO_IDS.map(id => [id, { voted: false }])),
       chain: [],
@@ -27,6 +27,7 @@
   let pendingVoter = null;
   let selectedCandidate = null;
   let tamperedChain = null;
+  let currentUser = null;
 
   function loadState() {
     try {
@@ -34,6 +35,17 @@
       if (!raw) return starterData();
       const parsed = JSON.parse(raw);
       if (!parsed?.election || !Array.isArray(parsed.candidates) || !parsed.eligibility || !Array.isArray(parsed.chain)) throw new Error('Unexpected saved data shape');
+      if (parsed.election.title === 'School Student Council Election 2026') {
+        parsed.election.title = 'Classroom Election';
+        parsed.election.description = 'A demo election. Change the title and candidates in Election admin.';
+        parsed.candidates.forEach((candidate, index) => {
+          if (/^Candidate [ABC]$/.test(candidate.name)) {
+            candidate.name = `Candidate ${index + 1}`;
+            candidate.description = 'Demo candidate';
+          }
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
       // Fill absent eligible demo IDs without changing any existing records.
       for (const id of DEMO_IDS) parsed.eligibility[id] ||= { voted: false };
       parsed.results ||= null;
@@ -240,12 +252,47 @@
   function renderVoting() {
     const open = state.election.status === 'open';
     $('#vote-closed').classList.toggle('hidden', open);
-    $('#voter-form').classList.toggle('hidden', !open);
-    $('#candidate-step').classList.toggle('hidden', !open || !pendingVoter);
+    const voterLogin = currentUser?.role === 'voter';
+    const loggedInVoterUsed = voterLogin && state.eligibility[currentUser.id]?.voted;
+    $('#voter-form').classList.toggle('hidden', !open || voterLogin);
+    $('#candidate-step').classList.toggle('hidden', !open || !pendingVoter || loggedInVoterUsed);
+    const feedback = $('#voter-feedback');
+    if (voterLogin) {
+      feedback.classList.remove('hidden', 'success', 'error');
+      feedback.classList.add(loggedInVoterUsed ? 'error' : 'success');
+      feedback.textContent = loggedInVoterUsed ? 'This demo ID has already voted.' : `Signed in as ${currentUser.id}. Choose a candidate below.`;
+    }
     if (open && pendingVoter) {
       $('#vote-candidates').innerHTML = state.candidates.map(candidate => `<div class="candidate-option${selectedCandidate === candidate.id ? ' selected' : ''}" data-candidate="${escapeHtml(candidate.id)}"><span class="candidate-radio"></span><span><b>${escapeHtml(candidate.name)}</b><small>${escapeHtml(candidate.description)}</small></span></div>`).join('');
       $('#review-vote').disabled = !selectedCandidate;
     }
+  }
+
+  function enterApp(user, page) {
+    currentUser = user;
+    $('#login-screen').classList.add('hidden');
+    $('#app-shell').classList.remove('hidden');
+    $('#session-label').textContent = user.role === 'organizer' ? 'Organizer' : user.id;
+    $$('[data-page="admin"]').forEach(link => link.classList.toggle('hidden', user.role !== 'organizer'));
+    location.hash = `#${page}`;
+    if (user.role === 'voter') {
+      pendingVoter = user.id;
+      selectedCandidate = null;
+      $('#voter-id').value = user.id;
+    } else {
+      pendingVoter = null;
+    }
+    renderVoting();
+  }
+
+  function leaveApp() {
+    currentUser = null; pendingVoter = null; selectedCandidate = null;
+    $('#app-shell').classList.add('hidden');
+    $('#login-screen').classList.remove('hidden');
+    $('#login-voter-id').value = '';
+    $('#login-organizer-password').value = '';
+    $('#login-error').classList.add('hidden');
+    location.hash = '';
   }
 
   async function verifyChainOrThrow() {
@@ -256,7 +303,8 @@
   function initNavigation() {
     function navigate() {
       const page = location.hash.replace('#', '') || 'dashboard';
-      const valid = ['dashboard', 'vote', 'explorer', 'results', 'admin', 'learn'].includes(page) ? page : 'dashboard';
+      let valid = ['dashboard', 'vote', 'explorer', 'results', 'admin', 'learn'].includes(page) ? page : 'dashboard';
+      if (currentUser?.role === 'voter' && valid === 'admin') valid = 'vote';
       $$('.page').forEach(section => section.classList.toggle('active', section.id === `page-${valid}`));
       $$('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === valid));
       $('#sidebar').classList.remove('open'); window.scrollTo(0, 0);
@@ -267,6 +315,40 @@
   }
 
   function initEvents() {
+    $$('[data-login-role]').forEach(button => button.addEventListener('click', () => {
+      const organizer = button.dataset.loginRole === 'organizer';
+      $$('[data-login-role]').forEach(tab => {
+        const active = tab === button;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', String(active));
+      });
+      $('#voter-login-form').classList.toggle('hidden', organizer);
+      $('#organizer-login-form').classList.toggle('hidden', !organizer);
+      $('#login-error').classList.add('hidden');
+    }));
+    $('#voter-login-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const id = $('#login-voter-id').value.trim().toUpperCase();
+      if (!Object.hasOwn(state.eligibility, id)) {
+        $('#login-error').textContent = 'That demo ID is not registered. Use VOTER001 through VOTER010.';
+        $('#login-error').classList.remove('hidden'); return;
+      }
+      $('#login-error').classList.add('hidden');
+      enterApp({ role: 'voter', id }, 'vote');
+    });
+    $('#organizer-login-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const name = $('#login-organizer-name').value.trim();
+      const password = $('#login-organizer-password').value;
+      if (name.toLowerCase() !== 'organizer' || password !== 'classroom') {
+        $('#login-error').textContent = 'Organizer sign-in did not match the demo credentials.';
+        $('#login-error').classList.remove('hidden'); return;
+      }
+      $('#login-error').classList.add('hidden');
+      enterApp({ role: 'organizer', name }, 'admin');
+    });
+    $('#logout-button').addEventListener('click', leaveApp);
+
     $('#toggle-credentials').addEventListener('click', event => {
       const list = $('#credential-list'); list.classList.toggle('hidden'); event.currentTarget.textContent = list.classList.contains('hidden') ? 'Show IDs +' : 'Hide IDs −';
     });
@@ -274,6 +356,7 @@
     $('#voter-form').addEventListener('submit', event => {
       event.preventDefault(); const id = $('#voter-id').value.trim().toUpperCase(); const feedback = $('#voter-feedback');
       feedback.classList.remove('hidden', 'success', 'error');
+      if (currentUser?.role === 'voter') { feedback.classList.add('error'); feedback.textContent = 'Sign out to switch voter IDs.'; return; }
       if (!Object.hasOwn(state.eligibility, id)) { feedback.classList.add('error'); feedback.textContent = 'That demo ID is not registered. Try VOTER001 through VOTER010.'; pendingVoter = null; }
       else if (state.eligibility[id].voted) { feedback.classList.add('error'); feedback.textContent = 'This demo ID has already voted. Each registered ID can vote once.'; pendingVoter = null; }
       else { pendingVoter = id; selectedCandidate = null; feedback.classList.add('success'); feedback.textContent = 'ID verified. Choose a candidate below.'; }
@@ -338,6 +421,15 @@
     $('#reset-election').addEventListener('click', () => {
       if (!window.confirm('Reset the demo election and remove its votes from this browser? This cannot be undone.')) return;
       state = starterData(); pendingVoter = null; selectedCandidate = null; tamperedChain = null; persist(); update(); toast('Demo election reset.'); location.hash = '#dashboard';
+    });
+    $('#create-election').addEventListener('click', async () => {
+      if (!window.confirm('Start a new election? This clears the current demo votes and candidates.')) return;
+      state = starterData();
+      state.election.title = 'New Election';
+      state.election.description = '';
+      state.candidates = [];
+      pendingVoter = null; selectedCandidate = null; tamperedChain = null;
+      persist(); await update(); location.hash = '#admin'; toast('New election created. Add a title and candidates to begin.');
     });
 
     $('#tamper-button').addEventListener('click', async () => {
