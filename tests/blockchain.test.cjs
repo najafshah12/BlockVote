@@ -70,7 +70,7 @@ test('prevents invalid IDs, invalid candidates, and duplicate votes while keepin
   assert.equal(api.checkVoterEligibility('voter001').eligible, true);
   assert.throws(() => api.setElectionStatus('ended'), /open election/);
   api.setElectionStatus('open');
-  await assert.rejects(api.recordVote('NOTREGISTERED', 'candidate-a'), /Invalid demo voter ID/);
+  await assert.rejects(api.recordVote('NOTREGISTERED', 'candidate-a'), /Invalid voter ID/);
   await assert.rejects(api.recordVote('VOTER001', 'unknown-candidate'), /Invalid candidate/);
   await api.recordVote('VOTER001', 'candidate-a');
   await assert.rejects(api.recordVote('VOTER001', 'candidate-b'), /already voted/);
@@ -105,28 +105,19 @@ test('persists election and chain state to LocalStorage and restores it', async 
   assert.equal(next.api.getLatestBlock().index, 1);
 });
 
-test('JSON export includes election records and keeps voter IDs out of blockchain transactions', async () => {
-  const { api } = createHarness(); await api.initialize(); api.setElectionStatus('open');
-  await api.recordVote('VOTER001', 'candidate-a');
-  const payload = api.createExportPayload();
-  assert.equal(payload.blockchain.length, 2);
-  assert.equal(payload.eligibility.VOTER001.voted, true);
-  assert.equal(JSON.stringify(payload.blockchain).includes('VOTER001'), false);
-  assert.match(payload.educationalNotice, /not decentralized/);
-});
-
 test('Vercel/mobile deployment settings are present', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
   const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
   const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
-  assert.match(html, /export-button/);
+  assert.doesNotMatch(html, /export-button|Export JSON/i);
+  assert.doesNotMatch(source, /createExportPayload|blockvote-election-data\.json/);
   assert.match(html, /voter-login-form/);
   assert.match(html, /organizer-login-form/);
   assert.match(source, /title: 'Classroom Election'/);
   assert.match(source, /password !== 'classroom'/);
   assert.match(readme, /Use \*\*New election\*\*/);
-  assert.match(source, /blockvote-election-data\.json/);
+  assert.match(html, /local-pill/);
   assert.match(css, /@media\(max-width:720px\)/);
   assert.match(css, /\.login-screen/);
   assert.equal(config.version, 2);
