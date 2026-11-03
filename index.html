@@ -3,7 +3,12 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1530"><meta name="description" content="An interactive classroom simulation of blockchain-based elections.">
-  <title>BlockVote — Election Workspace</title><link rel="stylesheet" href="styles.css">
+  <title>BlockVote — Election Workspace</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <section class="login-screen" id="login-screen">
@@ -48,11 +53,11 @@
       <a class="nav-link" href="#learn" data-page="learn"><span>◇</span> Understand blockchain</a>
     </nav>
     <div class="side-spacer"></div>
-    <div class="sidebar-note"><span class="dot"></span><div><b>Stored on this device</b><small>Local browser storage</small></div></div>
+    <div class="sidebar-note"><span class="dot"></span><div><b>Stored on this device</b><small>Saved in this browser</small></div></div>
     <div class="side-footer">BLOCKVOTE · CLASSROOM</div>
   </aside>
   <main class="main-shell">
-    <header class="topbar"><button id="menu-toggle" class="icon-button mobile-menu" aria-label="Open navigation">☰</button><div><div class="crumb">ELECTION <span>/</span> <b id="top-election">Classroom Election</b></div><div class="top-sub">Election workspace</div></div><div class="top-actions"><span class="session-label" id="session-label"></span><span class="local-pill"><i></i> LOCAL</span><button id="logout-button" class="button button-quiet logout-button">Sign out</button></div></header>
+    <header class="topbar"><button id="menu-toggle" class="icon-button mobile-menu" aria-label="Open navigation">☰</button><div><div class="crumb">ELECTION <span>/</span> <b id="top-election">Classroom Election</b></div><div class="top-sub">Election workspace</div></div><div class="top-actions"><span class="session-label" id="session-label"></span><button id="logout-button" class="button button-quiet logout-button">Sign out</button></div></header>
     <div class="content">
       <section class="page active" id="page-dashboard">
         <div class="hero"><div><div class="eyebrow"><span class="live-dot"></span> ELECTION WORKSPACE</div><h1 id="hero-title">Classroom Election</h1><p id="hero-description">Set up an election, cast a vote, and follow each record.</p><div class="hero-actions"><a class="button button-primary" href="#vote">Go to voting <span>→</span></a><a class="button button-glass" href="#explorer">View blocks</a></div></div><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="cube">▧</div><span class="float-chip chip-a">SHA-256</span><span class="float-chip chip-b">PREV HASH ↗</span><span class="float-chip chip-c">BLOCK 01</span></div></div>
